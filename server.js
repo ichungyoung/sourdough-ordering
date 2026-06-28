@@ -2,41 +2,80 @@
    Karen's Kitchen — Backend Server  ·  server.js
    ═══════════════════════════════════════════ */
 
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs').promises;
 const path = require('path');
-const crypto = require('crypto');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 const DAILY_CAPACITY = 2;
 
-const DB_PATH = path.join(__dirname, 'data', 'db.json');
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error("FATAL: MONGODB_URI environment variable is not defined.");
+  process.exit(1);
+}
+
+// Connect to MongoDB Atlas
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log('Connected to MongoDB Atlas'))
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
+
+/* ── Mongoose Models ── */
+
+const orderSchema = new mongoose.Schema({
+  customerName: { type: String, required: true },
+  customerEmail: { type: String },
+  customerPhone: { type: String },
+  flavor: { type: String, required: true },
+  flavorName: { type: String },
+  flavorEmoji: { type: String },
+  date: { type: String, required: true }, // Format: YYYY-MM-DD
+  quantity: { type: Number, required: true },
+  status: { type: String, enum: ['pending', 'fulfilled', 'cancelled'], default: 'pending' },
+  orderTimestamp: { type: Date, default: Date.now }
+}, {
+  toJSON: {
+    virtuals: true,
+    versionKey: false,
+    transform: function (doc, ret) {
+      ret.id = ret._id.toString();
+      delete ret._id;
+    }
+  }
+});
+
+const Order = mongoose.model('Order', orderSchema);
+
+const flavorSchema = new mongoose.Schema({
+  category: { type: String, required: true },
+  startDate: { type: String, required: true }, // Format: YYYY-MM-DD
+  emoji: { type: String },
+  name: { type: String, required: true },
+  description: { type: String, required: true }
+}, {
+  toJSON: {
+    virtuals: true,
+    versionKey: false,
+    transform: function (doc, ret) {
+      ret.id = ret._id.toString();
+      delete ret._id;
+    }
+  }
+});
+
+const Flavor = mongoose.model('Flavor', flavorSchema);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-
-/* ── Database Helpers ── */
-
-async function readDb() {
-  try {
-    const data = await fs.readFile(DB_PATH, 'utf8');
-    return JSON.parse(data);
-  } catch (err) {
-    const initialDb = { orders: [], flavors: [] };
-    await writeDb(initialDb);
-    return initialDb;
-  }
-}
-
-async function writeDb(db) {
-  await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
-  await fs.writeFile(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
-}
 
 /* ── Authentication Middleware ── */
 
@@ -67,12 +106,10 @@ app.post('/api/admin/login', (req, res) => {
 // Public: Get aggregated active loaves count per date (Privacy Preserving)
 app.get('/api/availability', async (req, res) => {
   try {
-    const db = await readDb();
+    const activeOrders = await Order.find({ status: { $ne: 'cancelled' } });
     const availability = {};
-    for (const o of db.orders) {
-      if (o.status !== 'cancelled') {
-        availability[o.date] = (availability[o.date] || 0) + (o.quantity || 0);
-      }
+    for (const o of activeOrders) {
+      availability[o.date] = (availability[o.date] || 0) + o.quantity;
     }
     res.json(availability);
   } catch (err) {
@@ -84,8 +121,8 @@ app.get('/api/availability', async (req, res) => {
 // Public: Get flavor overrides
 app.get('/api/flavors', async (req, res) => {
   try {
-    const db = await readDb();
-    res.json(db.flavors || []);
+    const flavors = await Flavor.find();
+    res.json(flavors);
   } catch (err) {
     console.error("Error loading flavors:", err);
     res.status(500).json({ error: 'Failed to load flavors' });
@@ -96,7 +133,6 @@ app.get('/api/flavors', async (req, res) => {
 app.post('/api/orders', async (req, res) => {
   const { customerName, customerEmail, customerPhone, cart } = req.body;
 
-  // Validation
   const name = (customerName || '').trim();
   const email = (customerEmail || '').trim();
   const phone = (customerPhone || '').trim();
@@ -118,8 +154,6 @@ app.post('/api/orders', async (req, res) => {
   }
 
   try {
-    const db = await readDb();
-
     // Capacity checking for each date in cart
     for (const item of cart) {
       const dateISO = item.date;
@@ -129,9 +163,8 @@ app.post('/api/orders', async (req, res) => {
       }
 
       // Check current orders in database
-      const dbOrdered = db.orders
-        .filter(o => o.date === dateISO && o.status !== 'cancelled')
-        .reduce((sum, o) => sum + o.quantity, 0);
+      const existingOrders = await Order.find({ date: dateISO, status: { $ne: 'cancelled' } });
+      const dbOrdered = existingOrders.reduce((sum, o) => sum + o.quantity, 0);
 
       // Check items in this client's cart for the same date (in case of multiples)
       const cartOrdered = cart
@@ -146,11 +179,9 @@ app.post('/api/orders', async (req, res) => {
     }
 
     // Save orders
-    const now = new Date().toISOString();
     const newOrders = [];
     for (const item of cart) {
-      const order = {
-        id: crypto.randomUUID(),
+      const orderData = {
         customerName: name,
         customerEmail: email,
         customerPhone: phone,
@@ -160,13 +191,13 @@ app.post('/api/orders', async (req, res) => {
         date: item.date,
         quantity: parseInt(item.qty, 10),
         status: 'pending',
-        orderTimestamp: now
+        orderTimestamp: new Date()
       };
-      db.orders.push(order);
+      const order = new Order(orderData);
+      await order.save();
       newOrders.push(order);
     }
 
-    await writeDb(db);
     res.json({ success: true, orders: newOrders });
   } catch (err) {
     console.error("Error placing order:", err);
@@ -177,8 +208,8 @@ app.post('/api/orders', async (req, res) => {
 // Admin: Get all orders
 app.get('/api/orders', requireAdmin, async (req, res) => {
   try {
-    const db = await readDb();
-    res.json(db.orders || []);
+    const orders = await Order.find();
+    res.json(orders);
   } catch (err) {
     console.error("Error reading orders:", err);
     res.status(500).json({ error: 'Failed to load orders' });
@@ -189,13 +220,12 @@ app.get('/api/orders', requireAdmin, async (req, res) => {
 app.post('/api/orders/:id/fulfill', requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    const db = await readDb();
-    const order = db.orders.find(o => o.id === id);
+    const order = await Order.findById(id);
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
     order.status = 'fulfilled';
-    await writeDb(db);
+    await order.save();
     res.json({ success: true, order });
   } catch (err) {
     console.error("Error fulfilling order:", err);
@@ -207,13 +237,12 @@ app.post('/api/orders/:id/fulfill', requireAdmin, async (req, res) => {
 app.post('/api/orders/:id/cancel', requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    const db = await readDb();
-    const order = db.orders.find(o => o.id === id);
+    const order = await Order.findById(id);
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
     order.status = 'cancelled';
-    await writeDb(db);
+    await order.save();
     res.json({ success: true, order });
   } catch (err) {
     console.error("Error cancelling order:", err);
@@ -230,13 +259,8 @@ app.post('/api/orders/clean', requireAdmin, async (req, res) => {
     const d = String(today.getDate()).padStart(2, '0');
     const todayISO = `${y}-${m}-${d}`;
 
-    const db = await readDb();
-    const before = db.orders.length;
-    db.orders = db.orders.filter(o => o.date >= todayISO);
-    const removed = before - db.orders.length;
-
-    await writeDb(db);
-    res.json({ success: true, removed });
+    const result = await Order.deleteMany({ date: { $lt: todayISO } });
+    res.json({ success: true, removed: result.deletedCount });
   } catch (err) {
     console.error("Error cleaning orders:", err);
     res.status(500).json({ error: 'Failed to clean past orders' });
@@ -251,27 +275,16 @@ app.post('/api/flavors', requireAdmin, async (req, res) => {
   }
 
   try {
-    const db = await readDb();
-    if (!db.flavors) db.flavors = [];
+    const emojiVal = emoji || (category === 'Sweet' ? '🍯' : '🌿');
+    
+    // Update if existing category and startDate, else insert
+    const flavor = await Flavor.findOneAndUpdate(
+      { category, startDate },
+      { emoji: emojiVal, name, description },
+      { new: true, upsert: true }
+    );
 
-    const existingIdx = db.flavors.findIndex(o => o.category === category && o.startDate === startDate);
-    const newOverride = {
-      id: crypto.randomUUID(),
-      category,
-      startDate,
-      emoji: emoji || (category === 'Sweet' ? '🍯' : '🌿'),
-      name,
-      description
-    };
-
-    if (existingIdx !== -1) {
-      db.flavors[existingIdx] = newOverride;
-    } else {
-      db.flavors.push(newOverride);
-    }
-
-    await writeDb(db);
-    res.json({ success: true, flavor: newOverride });
+    res.json({ success: true, flavor });
   } catch (err) {
     console.error("Error setting flavor override:", err);
     res.status(500).json({ error: 'Failed to set flavor override.' });
@@ -282,18 +295,10 @@ app.post('/api/flavors', requireAdmin, async (req, res) => {
 app.delete('/api/flavors/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    const db = await readDb();
-    if (!db.flavors) db.flavors = [];
-
-    const before = db.flavors.length;
-    db.flavors = db.flavors.filter(o => o.id !== id);
-    const removed = before - db.flavors.length;
-
-    if (removed === 0) {
+    const result = await Flavor.findByIdAndDelete(id);
+    if (!result) {
       return res.status(404).json({ error: 'Override not found' });
     }
-
-    await writeDb(db);
     res.json({ success: true });
   } catch (err) {
     console.error("Error deleting flavor override:", err);
