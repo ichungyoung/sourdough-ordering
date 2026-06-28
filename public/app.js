@@ -6,13 +6,13 @@
   'use strict';
 
   /* ── Constants ── */
-  const PRICE           = 15;
-  const DAILY_CAPACITY  = 2;
-  const LEAD_DAYS       = 2;
-  const WINDOW_DAYS     = 14;
+  const PRICE = 15;
+  const DAILY_CAPACITY = 2;
+  const LEAD_DAYS = 2;
+  const WINDOW_DAYS = 14;
   const DAY_NAMES_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const MONTH_NAMES     = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   const DEFAULT_FLAVORS = {
     Sweet: {
@@ -28,60 +28,60 @@
   };
 
   /* ── State ── */
-  let cart          = [];       // { id, date, flavorCategory, flavorName, flavorEmoji, qty }
-  let selectedDate  = null;
+  let cart = [];       // { id, date, flavorCategory, flavorName, flavorEmoji, qty }
+  let selectedDate = null;
   let selectedFlavor = null;    // "Sweet" or "Savory"
-  let selectedQty   = 1;
-  let isAdmin       = false;
-  let availability  = {};       // { [dateISO]: count }
+  let selectedQty = 1;
+  let isAdmin = false;
+  let availability = {};       // { [dateISO]: count }
   let flavorOverrides = [];     // [ flavor override objects ]
 
   /* ── DOM refs ── */
-  const $              = (s) => document.querySelector(s);
-  const $$             = (s) => document.querySelectorAll(s);
-  const calendarGrid   = $('#calendarGrid');
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => document.querySelectorAll(s);
+  const calendarGrid = $('#calendarGrid');
   const flavorSelector = $('#flavorSelector');
   const selectedDayLbl = $('#selectedDayLabel');
-  const flavorSweet    = $('#flavorSweet');
-  const flavorSavory   = $('#flavorSavory');
-  const qtyValue       = $('#qtyValue');
-  const qtyMinus       = $('#qtyMinus');
-  const qtyPlus        = $('#qtyPlus');
-  const qtyNote        = $('#qtyNote');
-  const qtyRow         = $('#qtyRow');
-  const btnAdd         = $('#btnAddToOrder');
-  const orderSummary   = $('#orderSummary');
+  const flavorSweet = $('#flavorSweet');
+  const flavorSavory = $('#flavorSavory');
+  const qtyValue = $('#qtyValue');
+  const qtyMinus = $('#qtyMinus');
+  const qtyPlus = $('#qtyPlus');
+  const qtyNote = $('#qtyNote');
+  const qtyRow = $('#qtyRow');
+  const btnAdd = $('#btnAddToOrder');
+  const orderSummary = $('#orderSummary');
   const orderItemsList = $('#orderItems');
-  const orderTotal     = $('#orderTotal');
-  const custName       = $('#custName');
-  const custEmail      = $('#custEmail');
-  const custPhone      = $('#custPhone');
-  const btnPlace       = $('#btnPlaceOrder');
-  const btnClear       = $('#btnClearOrder');
+  const orderTotal = $('#orderTotal');
+  const custName = $('#custName');
+  const custEmail = $('#custEmail');
+  const custPhone = $('#custPhone');
+  const btnPlace = $('#btnPlaceOrder');
+  const btnClear = $('#btnClearOrder');
   const successOverlay = $('#successOverlay');
-  const successDetail  = $('#successDetail');
-  const btnSuccessClose= $('#btnSuccessClose');
-  const customerView   = $('#customerView');
-  const adminView      = $('#adminView');
-  const adminContent   = $('#adminContent');
-  const btnToggle      = $('#btnToggleView');
-  const btnCleanOld    = $('#btnCleanOld');
+  const successDetail = $('#successDetail');
+  const btnSuccessClose = $('#btnSuccessClose');
+  const customerView = $('#customerView');
+  const adminView = $('#adminView');
+  const adminContent = $('#adminContent');
+  const btnToggle = $('#btnToggleView');
+  const btnCleanOld = $('#btnCleanOld');
   const toastContainer = $('#toastContainer');
 
   // Admin Auth DOM refs
-  const adminAuthOverlay   = $('#adminAuthOverlay');
+  const adminAuthOverlay = $('#adminAuthOverlay');
   const adminPasswordInput = $('#adminPasswordInput');
   const btnCancelAdminAuth = $('#btnCancelAdminAuth');
   const btnSubmitAdminAuth = $('#btnSubmitAdminAuth');
 
   // Flavor Override DOM refs
   const flavorOverrideForm = $('#flavorOverrideForm');
-  const flavorCategory     = $('#flavorCategory');
-  const flavorStartDate    = $('#flavorStartDate');
-  const flavorEmoji        = $('#flavorEmoji');
-  const flavorName         = $('#flavorName');
-  const flavorDesc         = $('#flavorDesc');
-  const activeFlavorsList  = $('#activeFlavorsList');
+  const flavorCategory = $('#flavorCategory');
+  const flavorStartDate = $('#flavorStartDate');
+  const flavorEmoji = $('#flavorEmoji');
+  const flavorName = $('#flavorName');
+  const flavorDesc = $('#flavorDesc');
+  const activeFlavorsList = $('#activeFlavorsList');
 
   /* ══════════════════════════════════════════
      UTILITIES
@@ -90,7 +90,7 @@
   /** Fetch flavor overrides from the backend */
   async function fetchFlavors() {
     try {
-      const res = await fetch('/api/flavors');
+      const res = await fetch('https://sourdough-ordering.onrender.com/api/flavors');
       flavorOverrides = await res.json();
     } catch (err) {
       console.error("Failed to fetch flavors", err);
@@ -100,7 +100,7 @@
   /** Fetch active order availability mapping from the backend */
   async function fetchAvailability() {
     try {
-      const res = await fetch('/api/availability');
+      const res = await fetch('https://sourdough-ordering.onrender.com/api/availability');
       availability = await res.json();
     } catch (err) {
       console.error("Failed to fetch availability", err);
@@ -213,9 +213,9 @@
       const used = DAILY_CAPACITY - remaining;
 
       let statusClass, statusText;
-      if (remaining <= 0)       { statusClass = 'status-full';      statusText = 'Sold Out'; }
-      else if (remaining === 1) { statusClass = 'status-limited';   statusText = `${remaining} left`; }
-      else                      { statusClass = 'status-available'; statusText = `${remaining} left`; }
+      if (remaining <= 0) { statusClass = 'status-full'; statusText = 'Sold Out'; }
+      else if (remaining === 1) { statusClass = 'status-limited'; statusText = `${remaining} left`; }
+      else { statusClass = 'status-available'; statusText = `${remaining} left`; }
 
       const card = document.createElement('div');
       card.className = `day-card ${statusClass}${selectedDate === iso ? ' selected' : ''}`;
@@ -400,17 +400,17 @@
 
   btnPlace.addEventListener('click', async () => {
     // Validate
-    const name  = custName.value.trim();
+    const name = custName.value.trim();
     const email = custEmail.value.trim();
     const phone = custPhone.value.trim();
     let valid = true;
-    
+
     custName.classList.remove('error');
     custEmail.classList.remove('error');
     custPhone.classList.remove('error');
-    
+
     if (!name) { custName.classList.add('error'); valid = false; }
-    
+
     // Either phone number or email is required. At least one must be filled out.
     if (!email && !phone) {
       custEmail.classList.add('error');
@@ -422,7 +422,7 @@
       if (email && !email.includes('@')) { custEmail.classList.add('error'); valid = false; }
       if (phone && phone.replace(/\D/g, '').length < 7) { custPhone.classList.add('error'); valid = false; }
     }
-    
+
     if (cart.length === 0) { toast('Your cart is empty.', 'error'); return; }
     if (!valid) { toast('Please fill in your details correctly.', 'error'); return; }
 
@@ -430,7 +430,7 @@
 
     // Send order to backend API
     try {
-      const res = await fetch('/api/orders', {
+      const res = await fetch('https://sourdough-ordering.onrender.com/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -536,7 +536,7 @@
   async function submitAdminAuth() {
     const pw = adminPasswordInput.value;
     try {
-      const res = await fetch('/api/admin/login', {
+      const res = await fetch('https://sourdough-ordering.onrender.com/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pw })
@@ -554,7 +554,7 @@
       toast(err.message, 'error');
       adminPasswordInput.focus();
       adminPasswordInput.select();
-      
+
       // Remove error outline class on type/change
       adminPasswordInput.addEventListener('input', function onInput() {
         adminPasswordInput.classList.remove('error');
@@ -577,7 +577,7 @@
 
     let orders = [];
     try {
-      const res = await fetch('/api/orders', {
+      const res = await fetch('https://sourdough-ordering.onrender.com/api/orders', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       if (res.status === 401 || res.status === 403) {
@@ -619,9 +619,9 @@
       const used = activeOrders.reduce((s, o) => s + o.quantity, 0);
       const remaining = DAILY_CAPACITY - used;
       let color;
-      if (remaining <= 0)       color = 'red';
+      if (remaining <= 0) color = 'red';
       else if (remaining === 1) color = 'yellow';
-      else                      color = 'green';
+      else color = 'green';
 
       html += `
         <div class="admin-day-card" style="animation-delay:${di * .08}s">
@@ -727,7 +727,7 @@
   btnCleanOld.addEventListener('click', async () => {
     const token = sessionStorage.getItem('karenskitchen_admin_token');
     try {
-      const res = await fetch('/api/orders/clean', {
+      const res = await fetch('https://sourdough-ordering.onrender.com/api/orders/clean', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token }
       });
@@ -808,7 +808,7 @@
 
     const token = sessionStorage.getItem('karenskitchen_admin_token');
     try {
-      const res = await fetch('/api/flavors', {
+      const res = await fetch('https://sourdough-ordering.onrender.com/api/flavors', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -823,12 +823,12 @@
       }
 
       toast(`Override set: ${name} starting ${prettyDate(startDate)}`, "success");
-      
+
       // Reset form fields
       flavorEmoji.value = '';
       flavorName.value = '';
       flavorDesc.value = '';
-      
+
       await fetchFlavors();
       renderFlavorOverrides();
       await fetchAvailability();
