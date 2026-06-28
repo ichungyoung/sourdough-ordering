@@ -6,6 +6,7 @@
   'use strict';
 
   /* ── Constants ── */
+  const BACKEND_URL_PREFIX = '__BACKEND_URL_PREFIX__'.startsWith('__') ? '' : '__BACKEND_URL_PREFIX__';
   const PRICE = 15;
   const DAILY_CAPACITY = 2;
   const LEAD_DAYS = 2;
@@ -90,7 +91,7 @@
   /** Fetch flavor overrides from the backend */
   async function fetchFlavors() {
     try {
-      const res = await fetch('https://sourdough-ordering.onrender.com/api/flavors');
+      const res = await fetch(`${BACKEND_URL_PREFIX}/api/flavors`);
       flavorOverrides = await res.json();
     } catch (err) {
       console.error("Failed to fetch flavors", err);
@@ -100,7 +101,7 @@
   /** Fetch active order availability mapping from the backend */
   async function fetchAvailability() {
     try {
-      const res = await fetch('https://sourdough-ordering.onrender.com/api/availability');
+      const res = await fetch(`${BACKEND_URL_PREFIX}/api/availability`);
       availability = await res.json();
     } catch (err) {
       console.error("Failed to fetch availability", err);
@@ -430,7 +431,7 @@
 
     // Send order to backend API
     try {
-      const res = await fetch('https://sourdough-ordering.onrender.com/api/orders', {
+      const res = await fetch(`${BACKEND_URL_PREFIX}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -536,7 +537,7 @@
   async function submitAdminAuth() {
     const pw = adminPasswordInput.value;
     try {
-      const res = await fetch('https://sourdough-ordering.onrender.com/api/admin/login', {
+      const res = await fetch(`${BACKEND_URL_PREFIX}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pw })
@@ -577,7 +578,7 @@
 
     let orders = [];
     try {
-      const res = await fetch('https://sourdough-ordering.onrender.com/api/orders', {
+      const res = await fetch(`${BACKEND_URL_PREFIX}/api/orders`, {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       if (res.status === 401 || res.status === 403) {
@@ -688,7 +689,7 @@
   async function fulfillOrder(id) {
     const token = sessionStorage.getItem('karenskitchen_admin_token');
     try {
-      const res = await fetch(`/api/orders/${id}/fulfill`, {
+      const res = await fetch(`${BACKEND_URL_PREFIX}/api/orders/${id}/fulfill`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token }
       });
@@ -704,7 +705,7 @@
     if (!confirm("Cancel this order? The customer's loaf slot will be freed up.")) return;
     const token = sessionStorage.getItem('karenskitchen_admin_token');
     try {
-      const res = await fetch(`/api/orders/${id}/cancel`, {
+      const res = await fetch(`${BACKEND_URL_PREFIX}/api/orders/${id}/cancel`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token }
       });
@@ -727,7 +728,7 @@
   btnCleanOld.addEventListener('click', async () => {
     const token = sessionStorage.getItem('karenskitchen_admin_token');
     try {
-      const res = await fetch('https://sourdough-ordering.onrender.com/api/orders/clean', {
+      const res = await fetch(`${BACKEND_URL_PREFIX}/api/orders/clean`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token }
       });
@@ -780,7 +781,7 @@
     if (!confirm("Are you sure you want to remove this flavor override? Subsequent orders on or after its start date will revert to defaults or the next matching override rule.")) return;
     const token = sessionStorage.getItem('karenskitchen_admin_token');
     try {
-      const res = await fetch(`/api/flavors/${id}`, {
+      const res = await fetch(`${BACKEND_URL_PREFIX}/api/flavors/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': 'Bearer ' + token }
       });
@@ -808,7 +809,7 @@
 
     const token = sessionStorage.getItem('karenskitchen_admin_token');
     try {
-      const res = await fetch('https://sourdough-ordering.onrender.com/api/flavors', {
+      const res = await fetch(`${BACKEND_URL_PREFIX}/api/flavors`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
