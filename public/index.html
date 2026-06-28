@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Karen's Kitchen — Artisan Sourdough</title>
+  <meta name="description" content="Karen's Kitchen is a small-batch artisan sourdough bakery offering handcrafted loaves baked daily with love, heritage flour, and wild yeast." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ══════════════ HEADER ══════════════ -->
+  <header class="site-header">
+    <div class="header-inner">
+      <!-- Coloured accent bars -->
+      <div class="header-accent-bar">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
+      <h1 class="brand-name">Karen's Kitchen</h1>
+      <p class="brand-tagline">Handcrafted Sourdough · Baked Daily</p>
+      <p class="brand-sub">Small-batch artisan loaves made with heritage flour, wild yeast &amp; love.</p>
+    </div>
+    <div class="header-fade"></div>
+  </header>
+
+  <!-- ══════════════ MAIN ══════════════ -->
+  <main>
+    <!-- ─── Customer View ─── -->
+    <section id="customerView" class="view active">
+      <div class="section-intro fade-in">
+        <h2 class="section-title">Order Fresh Loaves</h2>
+        <p class="section-desc">Choose your days, pick your flavors, and we'll have them ready for you — baked to golden perfection.</p>
+        <div class="info-pills">
+          <span class="pill">💰 $15 / loaf</span>
+          <span class="pill">📅 2-day lead time</span>
+          <span class="pill">🔥 2 loaves / day max</span>
+        </div>
+      </div>
+
+      <!-- Rotating Flavors Notice -->
+      <div class="rotating-flavors-card fade-in">
+        <h3 class="rotating-title">✨ Current Rotating Flavors</h3>
+        <div class="rotating-grid">
+          <div class="rotating-item">
+            <span class="rotating-emoji">🍯</span>
+            <div>
+              <span class="rotating-label">Sweet</span>
+              <span class="rotating-name">Brown Sugar Cinnamon</span>
+            </div>
+          </div>
+          <div class="rotating-item">
+            <span class="rotating-emoji">🌿</span>
+            <div>
+              <span class="rotating-label">Savory</span>
+              <span class="rotating-name">Rosemary Garlic</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calendar Grid -->
+      <div class="calendar-section fade-in">
+        <h3 class="calendar-heading">Select a Day</h3>
+        <div id="calendarGrid" class="calendar-grid"></div>
+      </div>
+
+      <!-- Flavor Selector (shown after picking a day) -->
+      <div id="flavorSelector" class="flavor-selector hidden fade-in">
+        <h3 class="flavor-heading">Choose for <span id="selectedDayLabel"></span></h3>
+        <div class="flavor-cards">
+          <button class="flavor-card" data-flavor="Sweet" id="flavorSweet">
+            <span class="flavor-emoji">🍯</span>
+            <span class="flavor-name">Sweet</span>
+            <span class="flavor-desc">Brown sugar &amp; cinnamon swirl</span>
+          </button>
+          <button class="flavor-card" data-flavor="Savory" id="flavorSavory">
+            <span class="flavor-emoji">🌿</span>
+            <span class="flavor-name">Savory</span>
+            <span class="flavor-desc">Rosemary, garlic &amp; sea salt</span>
+          </button>
+        </div>
+        <div class="qty-row" id="qtyRow">
+          <label class="qty-label">Quantity</label>
+          <div class="qty-control">
+            <button class="qty-btn" id="qtyMinus" aria-label="Decrease">−</button>
+            <span class="qty-value" id="qtyValue">1</span>
+            <button class="qty-btn" id="qtyPlus" aria-label="Increase">+</button>
+          </div>
+          <span class="qty-note" id="qtyNote"></span>
+        </div>
+        <button class="btn btn-add" id="btnAddToOrder">Add to Order</button>
+      </div>
+
+      <!-- Order Summary (sidebar on desktop, bottom sheet on mobile) -->
+      <aside id="orderSummary" class="order-summary hidden">
+        <div class="summary-header">
+          <h3>🧺 Your Order</h3>
+          <button class="btn-clear" id="btnClearOrder" title="Clear all">✕ Clear</button>
+        </div>
+        <ul id="orderItems" class="order-items"></ul>
+        <div class="summary-total">
+          <span>Total</span>
+          <span id="orderTotal">$0</span>
+        </div>
+
+        <div class="customer-info">
+          <h4>Your Details</h4>
+          <div class="field">
+            <label for="custName">Name</label>
+            <input type="text" id="custName" placeholder="Your full name" required />
+          </div>
+          <div class="field">
+            <label for="custEmail">Email</label>
+            <input type="email" id="custEmail" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="custPhone">Phone Number</label>
+            <input type="tel" id="custPhone" placeholder="123-456-7890" />
+          </div>
+        </div>
+
+        <button class="btn btn-place" id="btnPlaceOrder">Place Order 🥖</button>
+      </aside>
+
+      <!-- Success overlay -->
+      <div id="successOverlay" class="success-overlay hidden">
+        <div class="success-card">
+          <div class="success-icon">✓</div>
+          <h2>Order Placed!</h2>
+          <p>Thank you for your order. We'll have your loaves ready and waiting.</p>
+          <p class="success-detail" id="successDetail"></p>
+          <button class="btn btn-back" id="btnSuccessClose">Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Admin Password Auth Overlay -->
+    <div id="adminAuthOverlay" class="success-overlay hidden">
+      <div class="success-card">
+        <div class="success-icon" style="background: linear-gradient(135deg, var(--lavender) 0%, var(--brand) 100%);">🔑</div>
+        <h2>Admin Login</h2>
+        <p>Enter password to access dashboard:</p>
+        <div class="field" style="margin: 1.25rem auto; max-width: 280px;">
+          <input type="password" id="adminPasswordInput" placeholder="Password"
+            style="text-align: center; font-size: 1.1rem; letter-spacing: 0.1em;" />
+        </div>
+        <div style="display: flex; gap: 0.75rem; justify-content: center; max-width: 280px; margin: 0 auto;">
+          <button class="btn btn-back" id="btnCancelAdminAuth" style="flex: 1;">Cancel</button>
+          <button class="btn btn-add" id="btnSubmitAdminAuth" style="flex: 1; padding: 0.7rem;">Submit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Admin View ─── -->
+    <section id="adminView" class="view">
+      <div class="admin-header fade-in">
+        <h2 class="section-title">Admin Dashboard</h2>
+        <p class="section-desc">Manage orders, track capacity, and keep the oven running.</p>
+        <div class="admin-actions-bar">
+          <button class="btn btn-sm" id="btnCleanOld">🗑️ Clean Past Orders</button>
+        </div>
+      </div>
+
+      <div class="admin-grid fade-in">
+        <!-- Orders Column -->
+        <div class="admin-column">
+          <h3 class="admin-subtitle">📅 Orders Schedule</h3>
+          <div id="adminContent" class="admin-content"></div>
+        </div>
+
+        <!-- Flavor Customization Column -->
+        <div class="admin-column">
+          <h3 class="admin-subtitle">🎨 Flavor Customization</h3>
+          <div class="flavor-manager-card">
+            <h4>Add Flavor Override</h4>
+            <p class="flavor-manager-help">Set a custom flavor for the Sweet or Savory slot starting on a particular date.</p>
+            <form id="flavorOverrideForm" class="admin-form">
+              <div class="field">
+                <label for="flavorCategory">Category Slot</label>
+                <select id="flavorCategory" required>
+                  <option value="Sweet">Sweet Slot (Default: 🍯)</option>
+                  <option value="Savory">Savory Slot (Default: 🌿)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="flavorStartDate">Starting Date</label>
+                <input type="date" id="flavorStartDate" required />
+              </div>
+              <div class="field-row">
+                <div class="field field-emoji">
+                  <label for="flavorEmoji">Emoji</label>
+                  <input type="text" id="flavorEmoji" placeholder="🍯" required />
+                </div>
+                <div class="field field-name">
+                  <label for="flavorName">Flavor Name</label>
+                  <input type="text" id="flavorName" placeholder="e.g. Double Chocolate" required />
+                </div>
+              </div>
+              <div class="field">
+                <label for="flavorDesc">Description</label>
+                <input type="text" id="flavorDesc" placeholder="e.g. Belgian cocoa &amp; dark chocolate chips" required />
+              </div>
+              <button type="submit" class="btn btn-add" style="margin-top: 0.5rem; width: 100%;">Set Flavor Rule</button>
+            </form>
+
+            <h4 style="margin-top: 2rem; margin-bottom: 0.75rem;">Active Flavor Overrides</h4>
+            <ul id="activeFlavorsList" class="override-list">
+              <!-- Dynamically populated -->
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ══════════════ FOOTER ══════════════ -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-color-bar">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p class="footer-brand">Karen's Kitchen</p>
+      <p class="footer-tagline">Artisan Sourdough · Baked with Love</p>
+      <button id="btnToggleView" class="footer-link">Admin Access</button>
+      <p class="footer-copy">&copy; 2026 Karen's Kitchen. All loaves reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Toast container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
