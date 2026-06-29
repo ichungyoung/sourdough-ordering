@@ -5,8 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
-    "build": "node -e \"const fs = require('fs'); const file = 'public/app.js'; let content = fs.readFileSync(file, 'utf8'); content = content.replace(/__BACKEND_URL_PREFIX__/g, process.env.BACKEND_URL_PREFIX || ''); fs.writeFileSync(file, content, 'utf8');\""
+    "dev": "node --watch server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

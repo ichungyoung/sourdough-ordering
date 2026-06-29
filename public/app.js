@@ -6,7 +6,7 @@
   'use strict';
 
   /* ── Constants ── */
-  const BACKEND_URL_PREFIX = '__BACKEND_URL_PREFIX__'.startsWith('__') ? '' : '__BACKEND_URL_PREFIX__';
+  const BACKEND_URL_PREFIX = 'https://legacy.jscsnj.org/sourdough';
   const PRICE = 15;
   const DAILY_CAPACITY = 2;
   const LEAD_DAYS = 2;
